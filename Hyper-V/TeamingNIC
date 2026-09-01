@@ -1,0 +1,9 @@
+## Opis
+
+Tutaj piszesz normalny tekst.
+
+## Polecenie
+
+```powershell
+Get-NetAdapter
+```
