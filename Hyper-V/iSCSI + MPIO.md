@@ -52,11 +52,6 @@ Stan funkcji
 ```powershell
 Get-WindowsFeature -Name Multipath-IO
 ```
-## Polecenie
-
-```powershell
-Get-NetAdapter
-```
 Oczekiwany rezultat:
 Install State : Installed
 
