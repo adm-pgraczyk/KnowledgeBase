@@ -122,3 +122,11 @@ Przejdź do: **Discovery -> Discover Portal**
 
 Dodaj pierwszy portal: 10.10.10.100
 
+Następnie przejdź do: **Advanced Settings** 
+
+
+Local Adapter -> Microsoft iSCSI Initiator
+
+Initiator IP ->  NIC iSCSI 1
+
+**Powiel krok dla pozostałych połączeń**
