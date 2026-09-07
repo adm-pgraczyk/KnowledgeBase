@@ -51,9 +51,43 @@ Używaj **SET** jeśli korzystasz z hyper-V, Failover Cluster lub klastrów S2D 
 
 Używaj **LBFO** na serwerach fizycznych (Bare Metal) bez roli Hyper-V jeśli potrzebujesz redundancji sieciowej
 
+## Konfiguracja
 
+**Sprawdzenie dostępnych kart sieciowych**
 ```powershell
 Get-NetAdapter
 ```
+**Utworzenie vSwitch**
+```powershell
+New-VMSwitch -Name "vSwitch" -NetAdapterName "Ethernet 1", "Ethernet 2" -EnableEmbeddedTeaming $true
 
-s
+```
+Polecenie tworzy zewnętrzny Hyper-V vSwitch wykorzystujący dwie fizyczne karty sieciowe
+
+**Ustawienie algorytmu LoadBalancing**
+```powershell
+Set-VMSwitchTeam -Name "vSwitch" -LoadBalancingAlgorithm Dynamic
+```
+## [!NOTE]
+
+W przypadku Teamingu SET, dostępne są obecnie dwa algorytmy: HyperVPort i Dynamic. Domyślną wartością jest Dynamic
+
+* **HyperVPort**- Przypisuje ruch do fizycznego NIC na podstawie adresu MAC maszyny wirtualnej, ścieżki są bardziej statyczne
+
+Przykład: 
+```text
+VM01 ──────► NIC 1
+VM02 ──────► NIC 2
+VM03 ──────► NIC 1
+VM04 ──────► NIC 2
+```
+
+Zaletą jest przewidywalność ruchu sieciowego. Wadą może być to, że jeśli jedna VM generuje duży ruch a pozostałe maszyny nie wykazują zbyt dużej utylizacji łącza, jedna z kart może byc mocno obciążona podczas gdy druga będzie miała dużo wolnego pasma
+
+Microsoft opisuje HyperVPort jako dystrybucję opartą o MAC wirtualnych adapterów
+
+* **Dynamic**- Dla ruchu sieciowego dobiera ścieżki dynamicznie. Rozkłada ruch pomiędzy dostępne fizyczne NIC. Przy środowisku gdzie jest dużo maszyn wirtualnych i są różne poziomy ruchu, Dynamic jest sensownym rozwiązaniem
+
+
+
+
