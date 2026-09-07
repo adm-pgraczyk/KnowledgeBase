@@ -112,7 +112,7 @@ iSCSI Target 2
 ```powershell
 Test-NetConnection 10.10.10.100 -Port 3260
 ```
-[!UWAGA]
+## [!UWAGA]
 
 Przed rozpoczęciem konfiguracji warto potwierdzić podstawową łączność IP z każdym targetem. TCP/3260 jest domyslnym portem
 ## Dodanie portali iSCSI
@@ -130,3 +130,131 @@ Local Adapter -> Microsoft iSCSI Initiator
 Initiator IP ->  NIC iSCSI 1
 
 **Powiel krok dla pozostałych połączeń**
+
+## Połączenie z iSCSI Target
+Przejdź do zakładki: **Targets**
+
+Po wykryciu targetu wybierz go i kliknij **Connect**
+
+Zaznacz: **Enable multi-path**
+
+Następnie wybierz: **Advanced**
+
+Skonfiguruj pierwszą ścieżkę:
+Local Adapter: **iSCSI NIC 1**
+Initiator IP: **10.10.10.11**
+Target Portal IP: **10.10.10.100**
+
+Utwórz połączenie
+
+## Dodanie kolejnej ścieżki
+Ponownie wybierz: **Connect**
+
+Dla tego samego targetu skonfiguruj drugą ścieżkę
+Local Adapter: **iSCSI NIC 2**
+Initiator IP: **10.10.20.11**
+Target Portal IP: **10.10.20.100**
+
+Docelowo:
+
+```text
+Hyper-V Host
+     │
+     ├──── 10.10.10.11 ──── 10.10.10.100
+     │
+     └──── 10.10.20.11 ──── 10.10.20.100
+```
+
+## Weryfikacja MPIO
+Po ustanowieniu połączeń sprawdź czy MPIO wykrywa wiele ścieżek
+
+Podstawowe połączenie:
+```powershell
+mpclaim -s -d
+```
+Dla konkretnego urządzenia: 
+
+```powershell
+mpclaim -s -d <DeviceID>
+```
+W prawidłowo skonfigurowanym środowisku powinny być widoczne conajmniej dwie ścieżki
+
+**Przykład**
+
+| Path ID           | State 
+| ----------------- | ------------ 
+| 00000001          | Active/Optimized  
+| 00000002          |Active/Optimized  
+
+## [!NOTE]
+Dokładne nazwy i stany ścieżek zależą od używanego storage'u, DSM oraz konfiguracji MPIO.
+
+## MPIO i PowerShell
+Windows Server udostępnia moduł PowerShell do zarządzania MPIO
+
+**Sprawdzenie ustawień**
+```powershell
+Get-MPIOSetting
+```
+
+**Urządzenia obsługiwane przez MPIO**
+```powershell
+Get-MPIOAvailableHW
+```
+
+**Urządzenia iSCSI**
+```powershell
+Get-MPIOAvailableHW -BusType iSCSI
+```
+
+## Load Balancing MPIO
+MPIO może wykorzystywać różne polityki określające sposób obsługi dostępnych ścieżek:
+
+| Polityka                     | Opis 
+| -----------------            | ------------ 
+| Fail Over Only               | Jedna ścieżka aktywna, pozostałe pełnią funkcję zapasową 
+| Round Robin                  | Operacje I/O rozdzielane są pomiędzy dostępne ścieżki
+| Round Robin with Subset      | Round Robin z wykorzystaniem określonego podzbioru ścieżek  
+| Least Queue Depth            | Wybierana jest ścieżka z najmniejszą kolejką  
+| Weighted Paths               | Ścieżki posiadają różne wagi 
+
+**Sprawdzenie aktualnej polityki load balancing**
+```powershell
+Get-MSDSMGlobalDefaultLoadBalancePolicy
+```
+
+**Przykładowe ustawienie Round Robin**
+```powershell
+Set-MSDSMGlobalDefaultLoadBalancePolicy -Policy RR
+```
+##[!WARNING]
+Nie należy wybierać polityki wyłącznie na podstawie potencjalnej wydajności. W pierwszej kolejności należy sprawdzić zalecenia producenta macierzy oraz używanego DSM.
+
+
+## Konfiguracja hostów Hyper-V
+W środowisku ** Failover Cluster** konfiguracja powinno być wykonana na każdym węźle
+Przykład: 
+```text
+Hyper-V 01
+     │
+     ├──── iSCSI Path1
+     │
+     └──── iSCSI Path2
+
+Hyper-V 02
+     │
+     ├──── iSCSI Path1
+     │
+     └──── iSCSI Path2
+```
+
+**Każdy host powinien posiadać:**
+- Odpowiednie interfejsy iSCSI
+- Poprawną adresację IP
+- dostęp do wymaganych targetów
+- skonfigurowane MPIO
+- odpowiednią liczbę ścieżek
+- zgodną konfigurację storage
+
+## [!IMPORTANT]
+Nie należy zakładać, że poprawna konfiguracja jednego węzła oznacza poprawną konfigurację całego klastra.
