@@ -72,7 +72,7 @@ Set-VMSwitchTeam -Name "vSwitch" -LoadBalancingAlgorithm Dynamic
 
 W przypadku Teamingu SET, dostępne są obecnie dwa algorytmy: HyperVPort i Dynamic. Domyślną wartością jest Dynamic
 
-* **HyperVPort**- Przypisuje ruch do fizycznego NIC na podstawie adresu MAC maszyny wirtualnej, ścieżki są bardziej statyczne
+* **HyperVPort**- Przypisuje ruch do fizycznego NIC na podstawie adresu MAC maszyny wirtualnej, ścieżki są bardziej statyczne. Microsoft opisuje HyperVPort jako dystrybucję opartą o MAC wirtualnych adapterów
 
 Przykład: 
 ```text
@@ -83,8 +83,6 @@ VM04 ──────► NIC 2
 ```
 
 Zaletą jest przewidywalność ruchu sieciowego. Wadą może być to, że jeśli jedna VM generuje duży ruch a pozostałe maszyny nie wykazują zbyt dużej utylizacji łącza, jedna z kart może byc mocno obciążona podczas gdy druga będzie miała dużo wolnego pasma
-
-Microsoft opisuje HyperVPort jako dystrybucję opartą o MAC wirtualnych adapterów
 
 * **Dynamic**- Dla ruchu sieciowego dobiera ścieżki dynamicznie. Rozkłada ruch pomiędzy dostępne fizyczne NIC. Przy środowisku gdzie jest dużo maszyn wirtualnych i są różne poziomy ruchu, Dynamic jest sensownym rozwiązaniem
 
