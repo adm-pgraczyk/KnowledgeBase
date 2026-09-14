@@ -17,6 +17,8 @@ Hyper-V Host ─── SET ────┤
                          │
                          └──── Switch 2
 ```
+## [!NOTE]
+Switch 1 i Switch 2 powinny być niezależnymi ścieżkami sieciowymi
 
 **Przykładowe interfejsy:**
 | Element               | Wartość
@@ -45,8 +47,39 @@ W przypadku współczesnych środowisk Hyper-V preferowanym rozwiązaniem jest S
 | Obsługuje tryby niezależne oraz zależne od przełącznika (np. LACP) | Wyłącznie tryb niezależny od przełącznika
 | Od Windows Server 2022 nie można połączyć przełącznika Hyper-V z zespołem LBFO | Rozwiązanie dedykowane
 
+## Gdzie stosować SET?
+Switch Embedded Teaming (SET) jest rozwiązaniem przeznaczonym dla Hyper-V. Łączy fizyczne karty sieciowe bezpośrednio z Hyper-V Virtual Switch, zapewniając redundancję oraz możliwość wykorzystania wielu interfejsów sieciowych. 
+
+Sprawdza się szczególnie w środowiskach:
+- Hyper-V
+- Failover Cluster
+- Storage Spaces Direct (S2D)
+
+W przypadku klastra warto rozdzielić logicznie poszczególne rodzaje ruchu np:
+
+VLAN 10 -> Management
+VLAN 11 -> Cluster
+VLAN 12 -> Live Migration
+
+Przykład: 
+```text
+              SET / vSwitch
+                    │
+       ┌────────────┼────────────┐
+       │            │            │
+  Management     Cluster     Live Migration
+   VLAN 10       VLAN 11        VLAN 12
+       │            │            │
+       └────────────┼────────────┘
+                    │
+                VM Network
+```
+
 ## [!NOTE]
-Używaj **SET** jeśli korzystasz z hyper-V, Failover Cluster lub klastrów S2D (Storage Spaces Direct)
+**SET** nie zapewnia sam z siebie izolacji Management, Cluster, Live Migration czy Storage. Zapewnia warstwę redundantnych uplinków dla vSwitcha, natomiast separację ruchu realizuje się za pomocą VLAN-ów
+**SET** działa w trybie Switch Independent i nie wymaga konfiguracji LACP ani agregacji portów na przełączniku fizycznym. Każdy fizyczny interfejs jest podłączony niezależnie do switcha, a mechanizmem redundancji i rozkładania ruchu zajmuje się Hyper-V Virtual Switch
+
+
 
 Używaj **LBFO** na serwerach fizycznych (Bare Metal) bez roli Hyper-V jeśli potrzebujesz redundancji sieciowej
 
