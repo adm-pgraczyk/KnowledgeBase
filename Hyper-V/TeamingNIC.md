@@ -11,12 +11,11 @@ Celem konfiguracji jest utworzenie redundantnego vSwitcha Hyper-V wykorzystując
 
 **Przykładowa architektura**
 ```text
-
-                          ┌──── Switch 1
-                          |
-Hyper-V Host ──── SET ────| 
-                          │
-                          └──── Switch 2
+                         ┌──── Switch 1
+                         │
+Hyper-V Host ─── SET ────┤
+                         │
+                         └──── Switch 2
 ```
 
 **Przykładowe interfejsy:**
@@ -60,7 +59,6 @@ Get-NetAdapter
 **Utworzenie vSwitch**
 ```powershell
 New-VMSwitch -Name "vSwitch" -NetAdapterName "NIC 1", "NIC 2" -EnableEmbeddedTeaming $true
-
 ```
 Polecenie tworzy zewnętrzny Hyper-V vSwitch wykorzystujący dwie fizyczne karty sieciowe
 
@@ -90,9 +88,8 @@ Przy **HyperVPort** możesz mieć sytuację:
 
 NIC 1 -> VM01 + VM03 = 15Gb/s
 
-NIC 2 -> VM02 +VM03 = 3Gb/s
+NIC 2 -> VM02 +VM04 = 3Gb/s
 
-Przy **Dynamic** ruch sieciowy jest rozłożony równomiernie
 ## Test redundancji
 Samo utworzenie SET nie oznacza, że konfiguracja została prawidłowo przetestowana.
 
@@ -123,17 +120,18 @@ Enable-NetAdapter -Name "NIC 1" -Confirm:$false
 ## Dodatkowe polecenia powershell
 **Wyświetlenie konfiguracji**
 ```powershell
-Get-VMSwtichTeam -Name "vSwitch" | FL
+Get-VMSwitchTeam -Name "vSwitch" | FL
 ```
 
 **Dodanie kolejnej karty sieciowej**
+Dodanie karty sieciowej odbywa się poprzez przypisanie obecnych + dodatkowej karty sieciowej. Pominięcie kart, które aktualnie są dodane do konfiguracji spowoduje usunięcie ich z vSwitch
 ```powershell
-Add-VMSwitchTeamMember -VMSwitch (Get-VMSwitch -Name "vSwitch") -NetAdapterName "NIC 3"
+Set-VMSwitchTeam -Name "vSwitch" -NetAdapterName "NIC 1","NIC 2","NIC 3"
 ```
 
 **Usunięcie karty sieciowej**
 ```powershell
-Remove-VMSwitchTeamMember -VMSwitchName "vSwitch" -NetAdapterName "NIC 3"
+Set-VMSwitchTeam -Name "vSwitch" -NetAdapterName "NIC 1","NIC 2"
 ```
 
 **Usunięcie vSwtich**
