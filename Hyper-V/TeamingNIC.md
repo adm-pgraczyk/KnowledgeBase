@@ -59,7 +59,7 @@ Get-NetAdapter
 ```
 **Utworzenie vSwitch**
 ```powershell
-New-VMSwitch -Name "vSwitch" -NetAdapterName "Ethernet 1", "Ethernet 2" -EnableEmbeddedTeaming $true
+New-VMSwitch -Name "vSwitch" -NetAdapterName "NIC 1", "NIC 2" -EnableEmbeddedTeaming $true
 
 ```
 Polecenie tworzy zewnętrzny Hyper-V vSwitch wykorzystujący dwie fizyczne karty sieciowe
@@ -86,6 +86,67 @@ Zaletą jest przewidywalność ruchu sieciowego. Wadą może być to, że jeśli
 
 * **Dynamic**- Dla ruchu sieciowego dobiera ścieżki dynamicznie. Rozkłada ruch pomiędzy dostępne fizyczne NIC. Przy środowisku gdzie jest dużo maszyn wirtualnych i są różne poziomy ruchu, Dynamic jest sensownym rozwiązaniem
 
+Przy **HyperVPort** możesz mieć sytuację:
 
+NIC 1 -> VM01 + VM03 = 15Gb/s
 
+NIC 2 -> VM02 +VM03 = 3Gb/s
 
+Przy **Dynamic** ruch sieciowy jest rozłożony równomiernie
+## Test redundancji
+Samo utworzenie SET nie oznacza, że konfiguracja została prawidłowo przetestowana.
+
+Należy sprawdzić zachowanie podczas awarii jednej z kart
+
+**Przykładowy scenariusz:**
+
+1. Sprawdź stan interfejsów
+2. Uruchom VM korzystającą z vSwitch
+3. Wyłącz jeden z interfejsów sieciowych
+4. Zweryfikuj dostępność VM
+5. Przywróć interfejs sieciowy
+6. Wyłącz drugi z interfejsów
+7. Ponownie zweryfikuj dostępność VM
+8. Przywróć interfejs sieciowy
+9. Sprawdź stan zespołu
+
+**Przykładowe polecenia:**
+Wyłączenie karty sieciowej
+```powershell
+Disable-NetAdapter -Name "NIC 1" -Confirm:$false
+```
+Właczenie karty sieciowej
+```powershell
+Enable-NetAdapter -Name "NIC 1" -Confirm:$false
+```
+
+## Dodatkowe polecenia powershell
+**Wyświetlenie konfiguracji**
+```powershell
+Get-VMSwtichTeam -Name "vSwitch" | FL
+```
+
+**Dodanie kolejnej karty sieciowej**
+```powershell
+Add-VMSwitchTeamMember -VMSwitch (Get-VMSwitch -Name "vSwitch") -NetAdapterName "NIC 3"
+```
+
+**Usunięcie karty sieciowej**
+```powershell
+Remove-VMSwitchTeamMember -VMSwitchName "vSwitch" -NetAdapterName "NIC 3"
+```
+
+**Usunięcie vSwtich**
+```powershell
+Remove-VMSwitch -Name "vSwitch"
+```
+
+**Sprawdzenie właściwości fizycznych NIC**
+```powershell
+Get-NetAdapterAdvancedProperty -Name "NIC 1","NIC 2"
+```
+
+**Sprawdzenie VM podłączonych do vSwtich**
+```powershell
+Get-VMNetworkAdapter -All | Format-Table VMName, Name, SwitchName, Status
+```
